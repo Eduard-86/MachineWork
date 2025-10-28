@@ -39,3 +39,8 @@ Plugins/*/Intermediate/
 *.log
 *.backup
 *.tmp
+
+# Content
+Content/__ExternalActors__
+Content/__ExternalObjects__
+Content/
