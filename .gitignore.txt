@@ -1,0 +1,41 @@
+# Бинарные файлы
+*.exe
+*.dll
+*.so
+*.dylib
+
+# Промежуточные файлы сборки
+Binaries/
+Intermediate/
+Build/
+DerivedDataCache/
+*.sln
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+
+# Кэши и временные файлы
+Saved/
+*.opensdf
+*.sdf
+*.opendb
+*.VC.db
+*.suo
+*.xcodeproj/
+*.orig
+
+# Visual Studio файлы
+.vs/
+*.vcxproj.user
+*.suo
+*.user
+*.userosscache
+*.sln.docstates
+# Плагины (опционально)
+Plugins/*/Binaries/
+Plugins/*/Intermediate/
+
+# Логи
+*.log
+*.backup
+*.tmp
