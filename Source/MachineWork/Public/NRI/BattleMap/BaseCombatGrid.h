@@ -10,49 +10,105 @@
 class UBoxComponent;
 
 USTRUCT(BlueprintType)
-struct FPairGrid
+struct FCellIndex
 {
 	GENERATED_BODY()
 
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	uint8 row;
+
+	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	uint8 column;
 
-	FPairGrid()
+	FCellIndex()
 	: row(0), column(0)
 	{}
 
-	FPairGrid(uint8 rowinit, uint8 columninit)
+	FCellIndex(uint8 rowinit, uint8 columninit)
 		: row(rowinit), column(columninit)
 	{}
 
-	FPairGrid(const FPairGrid& other)
-		: FPairGrid(other.row, other.column)
+	FCellIndex(const FCellIndex& other)
+		: FCellIndex(other.row, other.column)
 	{}
 
-	bool operator==(const FPairGrid& other) const
+	bool operator==(const FCellIndex& other) const
 	{
 		return other.row == this->row &&
 			other.column == this->column;
 	}
+
+	FCellIndex operator+(const FCellIndex& other) const
+	{
+		return FCellIndex(other.row + this->row,
+			other.column + this->column);
+	}
 	
 };
 
-FORCEINLINE uint32 GetTypeHash(const FPairGrid& Explain) {
-	uint32 Hash = FCrc::MemCrc32(&Explain, sizeof(FPairGrid));
+#if UE_BUILD_DEBUG
+uint32 GetTypeHash(const FPairGrid& Explain);
+#else // optimize by inlining in shipping and development builds
+FORCEINLINE uint32 GetTypeHash(const FCellIndex& Explain) {
+	uint32 Hash = FCrc::MemCrc32(&Explain, sizeof(FCellIndex));
 	return Hash;
 }
+#endif
 
-using CellIndex = TSharedPtr<FPairGrid>;
+USTRUCT(BlueprintType)
+struct FCombatGridCell
+{
+	GENERATED_BODY()
+
+	UPROPERTY()
+	FCellIndex index;
+
+	UPROPERTY()
+	FVector location;
+
+	UPROPERTY()
+	uint8 passability;
+
+	FCombatGridCell()
+		: index (FCellIndex(0,0))
+		, location(FVector::Zero())
+		, passability(0)
+	{}
+
+	FCombatGridCell(FCellIndex cellindex, FVector celllocation, uint8 pass)
+		: index(FCellIndex(cellindex))
+		, location(celllocation)
+		, passability(pass)
+	{}
+
+	FCombatGridCell(const FCombatGridCell& other)
+		: FCombatGridCell(
+			other.index
+			, other.location
+			, other.passability)
+	{}
+
+	bool operator==(const FCombatGridCell& other) const
+	{
+		return other.passability == this->passability;
+	}
+
+	bool operator<(const FCombatGridCell& other) const
+	{
+		return this->passability < other.passability;
+	}
+
+};
+
+
 
 UCLASS(config = Game)
 class MACHINEWORK_API ABaseCombatGrid : public AActor
 {
 	GENERATED_BODY()
 
-	// TI - target interest | tochka interesa
-
 public:	
-	// Sets default values for this actor's properties
+	// Sets default values for this actor's properties  Wardruna - Lyfjaberg (Extended)
 	ABaseCombatGrid();
 
 	UPROPERTY(EditDefaultsOnly, BlueprintReadOnly)
@@ -68,6 +124,12 @@ protected:
 	UPROPERTY(BlueprintReadWrite, EditAnywhere)
 	FColor ColorCell = FColor::Blue;
 
+	uint8 GridRow;
+
+	uint8 GridColumn;
+
+
+
 public:
 
 	UFUNCTION(CallInEditor, BlueprintCallable)
@@ -79,16 +141,15 @@ public:
 	void DrawCellBoxes(float CellSize = 10.f, FColor CellColor = FColor::Blue, 
 		float TimeVisible = 5);
 
-	void CalculateCells(float CellSize = 10.f, FColor CellColor = FColor::Blue,
-		float TimeVisible = 5);
+	void CalculateCells(float CellSize = 10.f, FColor CellColor = FColor::Blue);
+
+protected:
+	UFUNCTION(BlueprintCallable, BlueprintPure)
+	void FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArray<FCellIndex>& Path);
 
 protected:
 
-	void FindPath(CellIndex StartCell, CellIndex FindCell, TArray<CellIndex> Path);
-
-protected:
-
-	TMap<FPairGrid, FVector> CellsMap;
+	TMap<FCellIndex, FCombatGridCell> CellsMap;
 
 protected:
 	// Called when the game starts or when spawned
@@ -99,3 +160,4 @@ public:
 	virtual void Tick(float DeltaTime) override;
 
 };
+
