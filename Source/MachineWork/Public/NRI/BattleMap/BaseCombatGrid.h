@@ -9,13 +9,40 @@
 
 class UBoxComponent;
 
+USTRUCT(BlueprintType)
 struct FPairGrid
 {
-	
+	GENERATED_BODY()
+
 	uint8 row;
 	uint8 column;
+
+	FPairGrid()
+	: row(0), column(0)
+	{}
+
+	FPairGrid(uint8 rowinit, uint8 columninit)
+		: row(rowinit), column(columninit)
+	{}
+
+	FPairGrid(const FPairGrid& other)
+		: FPairGrid(other.row, other.column)
+	{}
+
+	bool operator==(const FPairGrid& other) const
+	{
+		return other.row == this->row &&
+			other.column == this->column;
+	}
+	
 };
 
+FORCEINLINE uint32 GetTypeHash(const FPairGrid& Explain) {
+	uint32 Hash = FCrc::MemCrc32(&Explain, sizeof(FPairGrid));
+	return Hash;
+}
+
+using CellIndex = TSharedPtr<FPairGrid>;
 
 UCLASS(config = Game)
 class MACHINEWORK_API ABaseCombatGrid : public AActor
@@ -55,7 +82,13 @@ public:
 	void CalculateCells(float CellSize = 10.f, FColor CellColor = FColor::Blue,
 		float TimeVisible = 5);
 
-	TMap<TSharedPtr<FPairGrid>, FVector> CellsMap;
+protected:
+
+	void FindPath(CellIndex StartCell, CellIndex FindCell, TArray<CellIndex> Path);
+
+protected:
+
+	TMap<FPairGrid, FVector> CellsMap;
 
 protected:
 	// Called when the game starts or when spawned

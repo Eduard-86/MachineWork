@@ -6,6 +6,13 @@
 #include "Components/BoxComponent.h"
 
 
+#if UE_BUILD_DEBUG
+Fuint32 GetTypeHash(const FPairGrid& Explain) {
+	uint32 Hash = FCrc::MemCrc32(&Explain, sizeof(FPairGrid));
+	return Hash;
+}
+#endif
+
 // Sets default values
 ABaseCombatGrid::ABaseCombatGrid()
 {
@@ -79,13 +86,16 @@ void ABaseCombatGrid::CalculateCells(float CellSize, FColor CellColor,
 		{
 			XCellLoc = GridBoxScaleVector.X * -1 + (CellSize + (FullCellSize * j));
 
-	
-			CellsMap.Add(TSharedPtr<FPairGrid>(new FPairGrid(i, j)), 
+			CellsMap.Add(FPairGrid(i, j), 
 				FVector(BoxLoc.X + XCellLoc, BoxLoc.Y + YCellLoc, BoxLoc.Z));
 		}
 	}
 
 	return;
+}
+
+void ABaseCombatGrid::FindPath(CellIndex StartCell, CellIndex FindCell, TArray<CellIndex> Path)
+{
 }
 
 // Called when the game starts or when spawned
