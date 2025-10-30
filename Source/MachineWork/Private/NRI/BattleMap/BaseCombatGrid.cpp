@@ -105,70 +105,102 @@ void ABaseCombatGrid::CalculateCells(float CellSize, FColor CellColor)
 	return;
 }
 
-// допилить чтоб считало по диогонаоли 
-#define CalculateDistanceCell(а, b) FMath::Abs((int(а.row) - int(b.row)) + (int(а.column) - int(b.column)))
+FVector ABaseCombatGrid::GetCellLocation(FCellIndex CellIndex)
+{
 
+	return CellsMap.Find(CellIndex)->location;
+}
+
+FCellIndex ABaseCombatGrid::GetGridSize()
+{
+	return FCellIndex(GridRow, GridColumn);
+}
+
+// допилить чтоб считало по диогонаоли 
+#define CalculateDistanceCell(a, b) FMath::Abs(int(a.row) - int(b.row)) + FMath::Abs(int(a.column) - int(b.column))
 // так считаем эвристику тоесть дистанцию до цели каждый шаг, складываем его индексом проходимости и получаем желаемый результат
 void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArray<FCellIndex> & Path)
 {
-	bool bDiagonal = false;
+	if (StartCell.row >= GridRow || StartCell.column >= GridColumn || FinishCell.row >= GridRow || FinishCell.column >= GridColumn)
+	{
+		Path.Reset();
+		return;
+	}
+
+
+	bool bDiagonalLastStep = false;
 
 	FCellIndex CellStep = StartCell;
 
-	TArray<FCellIndex> StepsAroundArray;
+	Path.Reset();
 
-	TArray<FCombatGridCell> CellWeightsArray;
-
-
-	for (int rowindex = -1 ; rowindex != 2; rowindex++)
+	while (CellStep != FinishCell)
 	{
-		if(int(rowindex) + CellStep.row < 0 || GridRow < (int(rowindex) + CellStep.row))
-			continue;
+		TArray<FCellIndex> StepsAroundArray;
 
-		for (int colunmnindex = -1; colunmnindex != 2; colunmnindex++)
+		TArray<FCombatGridCell> CellAroundWeightsArray;
+
+
+		for (int rowindex = -1; rowindex != 2; rowindex++)
 		{
-			if (int(colunmnindex) + CellStep.column < 0 || GridColumn < (int(colunmnindex) + CellStep.column))
+			if (int(rowindex) + CellStep.row < 0 || GridRow < (int(rowindex) + CellStep.row))
 				continue;
 
-			if (!colunmnindex && !rowindex)
-				continue;
+			for (int colunmnindex = -1; colunmnindex != 2; colunmnindex++)
+			{
+				if (int(colunmnindex) + CellStep.column < 0 || GridColumn < (int(colunmnindex) + CellStep.column))
+					continue;
 
-			StepsAroundArray.Add(FCellIndex(rowindex + CellStep.row, colunmnindex + CellStep.column));
+				if (!colunmnindex && !rowindex)
+					continue;
+
+				StepsAroundArray.Add(FCellIndex(rowindex + CellStep.row, colunmnindex + CellStep.column));
+			}
 		}
-	}
-	
-	for (FCellIndex StepCell : StepsAroundArray)
-	{
-		int locrow = StepCell.row;
-		int locrow1 = FinishCell.row;
 
-		int loccol = StepCell.column;
-		int loccol1 = FinishCell.column;
-
-		int res = (locrow - locrow1) + (loccol - loccol);
-
-		
-
-		CellWeightsArray.Add(FCombatGridCell(StepCell, FVector::Zero(), CalculateDistanceCell(StepCell, FinishCell)));
-		
-	}
-
-	int a = 1 - 4;
-
-	CellWeightsArray.Sort();
-
-	//CellStep != FinishCell
-	while (false)
-	{
-		FCombatGridCell* CombatCell = CellsMap.Find(FCellIndex(CellStep.row-1, CellStep.column-1));
-		if(CombatCell && CellStep == CombatCell->index)
+		//* CellsMap.Find(StepCell)->passability
+		if (bDiagonalLastStep)
 		{
-			
-		}
-		int prok = CalculateDistanceCell(StartCell, FinishCell);
+			for (FCellIndex StepCell : StepsAroundArray)
+			{
+				uint8 StepPassability = CalculateDistanceCell(StepCell, FinishCell) + 1;
 
+				int rowsu = StepCell.row - CellStep.row;
+
+				int colsu = StepCell.column - CellStep.column;
+
+				int sum = FMath::Abs(rowsu) - FMath::Abs(colsu);
+
+				if (!sum)
+				{
+					StepPassability = StepPassability + 2;
+				}
+
+				CellAroundWeightsArray.Add(FCombatGridCell(StepCell, FVector::Zero(), StepPassability));
+			}
+		}
+		else
+		{
+			for (FCellIndex StepCell : StepsAroundArray)
+				CellAroundWeightsArray.Add(FCombatGridCell(StepCell, FVector::Zero(),
+					CalculateDistanceCell(StepCell, FinishCell) + 1));
+		}
+
+		CellAroundWeightsArray.Sort();
+
+		FCellIndex SortCell = CellAroundWeightsArray[0].index;
+
+		int rowsu = SortCell.row - CellStep.row;
+		int colsu = SortCell.column - CellStep.column;
+		int sum = FMath::Abs(rowsu) - FMath::Abs(colsu);
+
+		bDiagonalLastStep = !sum;
+
+		Path.Add(SortCell);
+
+		CellStep = SortCell;
 	}
-	
+
 }
 
 
@@ -181,9 +213,9 @@ void ABaseCombatGrid::Tick(float DeltaTime)
 	{
 		for (auto Cell : CellsMap)
 		{
-			//DrawDebugBox(GetWorld(), FVector(Cell.Value.X, Cell.Value.Y, Cell.Value.Z),
-			//	FVector(DefaultCellSize, DefaultCellSize, GridBox->GetUnscaledBoxExtent().Z), ColorCell, false, DeltaTime * 2
-			//);
+			DrawDebugBox(GetWorld(), FVector(Cell.Value.location.X, Cell.Value.location.Y, Cell.Value.location.Z),
+				FVector(DefaultCellSize, DefaultCellSize, GridBox->GetUnscaledBoxExtent().Z), ColorCell, false, DeltaTime * 2
+			);
 			
 		}
 		

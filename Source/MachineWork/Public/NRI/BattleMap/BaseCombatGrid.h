@@ -143,6 +143,16 @@ public:
 
 	void CalculateCells(float CellSize = 10.f, FColor CellColor = FColor::Blue);
 
+public:
+
+	UFUNCTION(BlueprintCallable)
+	FVector GetCellLocation(FCellIndex CellIndex);
+
+	UFUNCTION(BlueprintCallable)
+	FCellIndex GetGridSize();
+
+
+
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)
 	void FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArray<FCellIndex>& Path);
