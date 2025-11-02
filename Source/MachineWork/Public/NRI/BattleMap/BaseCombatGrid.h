@@ -118,10 +118,10 @@ protected:
 
 	bool IsPrint;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditInstanceOnly)
 	float DefaultCellSize = 10.f;
 
-	UPROPERTY(BlueprintReadWrite, EditAnywhere)
+	UPROPERTY(BlueprintReadWrite, EditInstanceOnly)
 	FColor ColorCell = FColor::Blue;
 
 	uint8 GridRow;
@@ -152,6 +152,8 @@ public:
 	FCellIndex GetGridSize();
 
 
+	UFUNCTION(BlueprintCallable)
+	FCellIndex FindCellUsingVector(FVector FindLocation);
 
 protected:
 	UFUNCTION(BlueprintCallable, BlueprintPure)

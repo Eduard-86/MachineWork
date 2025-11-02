@@ -77,8 +77,8 @@ void ABaseCombatGrid::CalculateCells(float CellSize, FColor CellColor)
 	FVector GridBoxScaleVector = GridBox->GetUnscaledBoxExtent();
 	FVector BoxLoc = GridBox->GetComponentLocation();
 
-	GridRow = (GridBoxScaleVector.Y) / CellSize;
-	GridColumn = (GridBoxScaleVector.X) / CellSize;
+	GridRow = ((GridBoxScaleVector.Y) / CellSize) - 1;
+	GridColumn = ((GridBoxScaleVector.X) / CellSize) - 1;
 
 
 	float YCellLoc;
@@ -111,9 +111,29 @@ FVector ABaseCombatGrid::GetCellLocation(FCellIndex CellIndex)
 	return CellsMap.Find(CellIndex)->location;
 }
 
-FCellIndex ABaseCombatGrid::GetGridSize()
+FCellIndex ABaseCombatGrid::GetGridSize() 
 {
 	return FCellIndex(GridRow, GridColumn);
+}
+
+FCellIndex ABaseCombatGrid::FindCellUsingVector(FVector FindLocation)
+{
+	FVector GridBoxScaleVector = GridBox->GetUnscaledBoxExtent();
+	FVector BoxLoc = GridBox->GetComponentLocation();
+
+	FVector LocalFindLocation = BoxLoc - FindLocation;
+
+	//uint8 FindCellRowIndex = (FMath::Abs(LocalFindLocation.Y)) / DefaultCellSize;
+	//uint8 FindCellColumnIndex = (FMath::Abs(LocalFindLocation.X)) / DefaultCellSize;
+
+	uint8 FindCellRowIndex = (LocalFindLocation.Y + GridBoxScaleVector.Y) / DefaultCellSize;
+	uint8 FindCellColumnIndex = (LocalFindLocation.X + GridBoxScaleVector.X) / DefaultCellSize;
+
+
+	if(FindCellRowIndex > GridRow || FindCellColumnIndex > GridColumn)
+		return FCellIndex();
+	else
+		return FCellIndex(FindCellRowIndex, FindCellColumnIndex);
 }
 
 // допилить чтоб считало по диогонаоли 
