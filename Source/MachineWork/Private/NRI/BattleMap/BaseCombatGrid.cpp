@@ -27,9 +27,9 @@ ABaseCombatGrid::ABaseCombatGrid()
 // Called when the game starts or when spawned
 void ABaseCombatGrid::BeginPlay()
 {
-	Super::BeginPlay();
-
 	CalculateCells(DefaultCellSize, ColorCell);
+
+	Super::BeginPlay();
 }
 
 void ABaseCombatGrid::CallInEditorDraeCellBoxes()
@@ -136,9 +136,9 @@ FCellIndex ABaseCombatGrid::FindCellUsingVector(FVector FindLocation)
 		return FCellIndex(FindCellRow, FindCellColumn);
 }
 
-// допилить чтоб считало по диогонаоли 
+// РґРѕРїРёР»РёС‚СЊ С‡С‚РѕР± СЃС‡РёС‚Р°Р»Рѕ РїРѕ РґРёРѕРіРѕРЅР°РѕР»Рё 
 #define CalculateDistanceCell(a, b) FMath::Abs(int(a.row) - int(b.row)) + FMath::Abs(int(a.column) - int(b.column))
-// так считаем эвристику тоесть дистанцию до цели каждый шаг, складываем его индексом проходимости и получаем желаемый результат
+// С‚Р°Рє СЃС‡РёС‚Р°РµРј СЌРІСЂРёСЃС‚РёРєСѓ С‚РѕРµСЃС‚СЊ РґРёСЃС‚Р°РЅС†РёСЋ РґРѕ С†РµР»Рё РєР°Р¶РґС‹Р№ С€Р°Рі, СЃРєР»Р°РґС‹РІР°РµРј РµРіРѕ РёРЅРґРµРєСЃРѕРј РїСЂРѕС…РѕРґРёРјРѕСЃС‚Рё Рё РїРѕР»СѓС‡Р°РµРј Р¶РµР»Р°РµРјС‹Р№ СЂРµР·СѓР»СЊС‚Р°С‚
 void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArray<FCellIndex> & Path)
 {
 	if (StartCell.row >= GridRow || StartCell.column >= GridColumn || FinishCell.row >= GridRow || FinishCell.column >= GridColumn)
@@ -214,57 +214,76 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 
 		CellAroundWeightsArray.Sort();
 
-
-		int OnePassability = 1;
-		int StartPassability = CellAroundWeightsArray[0].passability;
+		uint8 OnePassability = 0;
 
 		for(int i = 1; i < CellAroundWeightsArray.Num(); i++)
 		{
-			if (StartPassability == CellAroundWeightsArray[i].passability)
+			if (CellAroundWeightsArray[0].passability == CellAroundWeightsArray[i].passability)
 				OnePassability++;
 			else
 				break;
 		}
 
-
-		/*
-		 * Из каждой точки нужно взять направление 
-		 * StepCell - CellAroundWeightsArray = 1.1 - 1.2, 1.1 - 2.1, 1.1 - 2.2 = получем напровление 0.1, 1.0, 1.1
-		 * После найдём с этими напровлениями скалярное произведение между ними и растоянием до точки = StepCell - FinishCell = 1.1 - 3.6 = 2.5
-		 * сколярное произведение выглядит так = (0,1) · (2,5) = 0*2 + 1*5 = 5!, (1,0) · (2,5) = 1*2 + 0*5 = 2!
-		 * находим большее сколярное произведение, это и будет лучшей клеткой! 
-		 */
+		FCellIndex* SortCell;
 
 
-
-		FCombatGridCell* BestCellAroundOnes = nullptr;
-
-		FCellIndex PathDistance(CellStep.row - FinishCell.row, CellStep.column - FinishCell.column);
-
-		FCellIndex* XCellIndex = nullptr;
-		FCellIndex* YCellIndex = nullptr;
-
-		int BestCellDot = 0;
-
-		for(int i = 0; i + 1 < OnePassability; i++)
+		if (OnePassability > 0)
 		{
-			CellAroundWeightsArray[i].index;
+			/*
+		 * В»Р· РєР°Р¶РґРѕР№ С‚РѕС‡РєРё РЅСѓР¶РЅРѕ РІР·В¤С‚СЊ РЅР°РїСЂР°РІР»РµРЅРёРµ
+		 * StepCell - CellAroundWeightsArray = 1.1 - 1.2, 1.1 - 2.1, 1.1 - 2.2 = РїРѕР»СѓС‡РµРј РЅР°РїСЂРѕРІР»РµРЅРёРµ 0.1, 1.0, 1.1
+		 * С•РѕСЃР»Рµ РЅР°Р№РґР„Рј СЃ СЌС‚РёРјРё РЅР°РїСЂРѕРІР»РµРЅРёВ¤РјРё СЃРєР°Р»В¤СЂРЅРѕРµ РїСЂРѕРёР·РІРµРґРµРЅРёРµ РјРµР¶РґСѓ РЅРёРјРё Рё СЂР°СЃС‚РѕВ¤РЅРёРµРј РґРѕ С‚РѕС‡РєРё = StepCell - FinishCell = 1.1 - 3.6 = 2.5
+		 * СЃРєРѕР»В¤СЂРЅРѕРµ РїСЂРѕРёР·РІРµРґРµРЅРёРµ РІС‹РіР»В¤РґРёС‚ С‚Р°Рє = (0,1) Р€ (2,5) = 0*2 + 1*5 = 5!, (1,0) Р€ (2,5) = 1*2 + 0*5 = 2!
+		 * РЅР°С…РѕРґРёРј Р±РѕР»СЊС€РµРµ СЃРєРѕР»В¤СЂРЅРѕРµ РїСЂРѕРёР·РІРµРґРµРЅРёРµ, СЌС‚Рѕ Рё Р±СѓРґРµС‚ Р»СѓС‡С€РµР№ РєР»РµС‚РєРѕР№!
+		 */
+			OnePassability++;
 
-			int XCellDot = XCellIndex->row* YCellIndex->row + XCellIndex->column * YCellIndex->column;
+			FVector2D PathDistance(
+				FMath::Abs(int(CellStep.row - FinishCell.row)), FMath::Abs(int(CellStep.column - FinishCell.column)));
+
+			TArray<FVector2D> OnePassabilityCellsVector;
+
+			for (int i = 0; i < OnePassability; i++)
+			{
+				OnePassabilityCellsVector.Add(
+					FVector2D(
+						int(CellAroundWeightsArray[i].index.row - CellStep.row),
+						int(CellAroundWeightsArray[i].index.column - CellStep.column)));
+			}
+
+			TArray<int> DotArray;
+
+			for (int i = 0; i < OnePassability; i++)
+			{
+				DotArray.Add(OnePassabilityCellsVector[i].X * PathDistance.X +
+					OnePassabilityCellsVector[i].Y * PathDistance.Y);
+			}
+
+			uint8 BestCellIndex = 0;
+
+			for (int i = 1; i < OnePassability; i++)
+			{
+				if (DotArray[BestCellIndex] < DotArray[i])
+					BestCellIndex = i;
+			}
+
+			//
+			SortCell = &CellAroundWeightsArray[BestCellIndex].index;
 		}
+		else 
+			SortCell = &CellAroundWeightsArray[0].index;
+
 		
 
-		FCellIndex SortCell = CellAroundWeightsArray[0].index;
-
-		int rowsu = SortCell.row - CellStep.row;
-		int colsu = SortCell.column - CellStep.column;
-		int sum = FMath::Abs(rowsu) - FMath::Abs(colsu);
+		uint8 rowsu = FMath::Abs(SortCell->row - CellStep.row);
+		uint8 colsu = FMath::Abs(SortCell->column - CellStep.column);
+		uint8 sum = FMath::Abs(rowsu - colsu);
 
 		bDiagonalLastStep = !sum;
 
-		Path.Add(SortCell);
+		Path.Add(*SortCell);
 
-		CellStep = SortCell;
+		CellStep = *SortCell;
 	}
 
 }
