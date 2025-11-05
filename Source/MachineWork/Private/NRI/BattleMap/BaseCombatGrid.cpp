@@ -178,6 +178,12 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 			}
 		}
 
+		if(StepsAroundArray.IsEmpty())
+		{
+			checkf(true, TEXT("Do not find one cell around cell"));
+			return;
+		}
+
 		//* CellsMap.Find(StepCell)->passability
 		if (bDiagonalLastStep)
 		{
@@ -207,6 +213,46 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 		}
 
 		CellAroundWeightsArray.Sort();
+
+
+		int OnePassability = 1;
+		int StartPassability = CellAroundWeightsArray[0].passability;
+
+		for(int i = 1; i < CellAroundWeightsArray.Num(); i++)
+		{
+			if (StartPassability == CellAroundWeightsArray[i].passability)
+				OnePassability++;
+			else
+				break;
+		}
+
+
+		/*
+		 * »з каждой точки нужно вз€ть направление 
+		 * StepCell - CellAroundWeightsArray = 1.1 - 1.2, 1.1 - 2.1, 1.1 - 2.2 = получем напровление 0.1, 1.0, 1.1
+		 * ѕосле найдЄм с этими напровлени€ми скал€рное произведение между ними и расто€нием до точки = StepCell - FinishCell = 1.1 - 3.6 = 2.5
+		 * скол€рное произведение выгл€дит так = (0,1) Ј (2,5) = 0*2 + 1*5 = 5!, (1,0) Ј (2,5) = 1*2 + 0*5 = 2!
+		 * находим большее скол€рное произведение, это и будет лучшей клеткой! 
+		 */
+
+
+
+		FCombatGridCell* BestCellAroundOnes = nullptr;
+
+		FCellIndex PathDistance(CellStep.row - FinishCell.row, CellStep.column - FinishCell.column);
+
+		FCellIndex* XCellIndex = nullptr;
+		FCellIndex* YCellIndex = nullptr;
+
+		int BestCellDot = 0;
+
+		for(int i = 0; i + 1 < OnePassability; i++)
+		{
+			CellAroundWeightsArray[i].index;
+
+			int XCellDot = XCellIndex->row* YCellIndex->row + XCellIndex->column * YCellIndex->column;
+		}
+		
 
 		FCellIndex SortCell = CellAroundWeightsArray[0].index;
 
