@@ -229,7 +229,9 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 
 		if (OnePassability > 0)
 		{
-			/*
+			/* разбирись, аргоритм не работает
+			 *
+			 *
 		 * »з каждой точки нужно вз¤ть направление
 		 * StepCell - CellAroundWeightsArray = 1.1 - 1.2, 1.1 - 2.1, 1.1 - 2.2 = получем напровление 0.1, 1.0, 1.1
 		 * ѕосле найдЄм с этими напровлени¤ми скал¤рное произведение между ними и расто¤нием до точки = StepCell - FinishCell = 1.1 - 3.6 = 2.5
