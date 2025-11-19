@@ -228,7 +228,7 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 
 
 		if (OnePassability > 0)
-		{
+		{  
 			/* разбирись, аргоритм не работает
 			 *
 			 *
@@ -240,9 +240,25 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 		 */
 			OnePassability++;
 
+			// вектор к цели
+			// данный вектор может быть отрицательным ! 
 			FVector2D PathDistance(
-				FMath::Abs(int(CellStep.row - FinishCell.row)), FMath::Abs(int(CellStep.column - FinishCell.column)));
+				//float(CellStep.row - FinishCell.row), float(CellStep.column - FinishCell.column));
+				float(FinishCell.row - CellStep.row), float(FinishCell.column - CellStep.column));
 
+			// Получаем величину вектора пути
+			float PahtDistandeVectorLength = FMath::Sqrt(
+				FMath::Pow(PathDistance.X, 2) + FMath::Pow(PathDistance.Y, 2)
+			);
+
+			// получаем нормолизованный путь
+			FVector2D PathDistanceNorm(
+				PathDistance.X / PahtDistandeVectorLength,
+				PathDistance.Y / PahtDistandeVectorLength
+			);
+			
+			// массив векторов движения
+			// направления могут и будут отрицательными. 
 			TArray<FVector2D> OnePassabilityCellsVector;
 
 			for (int i = 0; i < OnePassability; i++)
@@ -253,12 +269,30 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 						int(CellAroundWeightsArray[i].index.column - CellStep.column)));
 			}
 
-			TArray<int> DotArray;
+			// Создадим массив нормализаций
+			TArray<FVector2D> OnePassabilityCellsVectorNorm;
 
 			for (int i = 0; i < OnePassability; i++)
 			{
-				DotArray.Add(OnePassabilityCellsVector[i].X * PathDistance.X +
-					OnePassabilityCellsVector[i].Y * PathDistance.Y);
+				float CellVectorLenght = FMath::Sqrt(
+					FMath::Pow(OnePassabilityCellsVector[i].X, 2) + FMath::Pow(OnePassabilityCellsVector[i].Y, 2)
+				);
+
+				OnePassabilityCellsVectorNorm.Add(
+					FVector2D(
+						OnePassabilityCellsVector[i].X / CellVectorLenght,
+						OnePassabilityCellsVector[i].Y / CellVectorLenght
+					)
+				);
+			}
+
+			
+			TArray<float> DotArray;
+
+			for (int i = 0; i < OnePassability; i++)
+			{
+				DotArray.Add(OnePassabilityCellsVectorNorm[i].X * PathDistanceNorm.X +
+					OnePassabilityCellsVectorNorm[i].Y * PathDistanceNorm.Y);
 			}
 
 			uint8 BestCellIndex = 0;
@@ -268,8 +302,8 @@ void ABaseCombatGrid::FindPath(FCellIndex StartCell, FCellIndex FinishCell, TArr
 				if (DotArray[BestCellIndex] < DotArray[i])
 					BestCellIndex = i;
 			}
+			
 
-			//
 			SortCell = &CellAroundWeightsArray[BestCellIndex].index;
 		}
 		else 
