@@ -1,12 +1,12 @@
 // Copyright Epic Games, Inc. All Rights Reserved.
 
 #include "Character/BaceNRICharacter.h"
-#include "Camera/CameraComponent.h"
 #include "Components/CapsuleComponent.h"
 #include "Components/InputComponent.h"
 #include "GameFramework/CharacterMovementComponent.h"
 #include "GameFramework/Controller.h"
-#include "GameFramework/SpringArmComponent.h"
+
+#include "Runtime/AIModule/Classes/AIController.h"
 
 //////////////////////////////////////////////////////////////////////////
 // AMachineWorkCharacter
@@ -41,8 +41,22 @@ ABaceNRICharacter::ABaceNRICharacter()
 //////////////////////////////////////////////////////////////////////////
 // Input
 
+void ABaceNRICharacter::StartMoveToPoints(TArray<FCombatGridCell> PointsArray)
+{
+	AAIController* AICont = Cast<AAIController>(GetController());
+
+	AICont->ReceiveMoveCompleted.AddDynamic(this, &ABaceNRICharacter::MoveCompleted);
+
+	AICont->MoveToLocation(FVector::Zero());
+
+}
+
 void ABaceNRICharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
+}
+
+void ABaceNRICharacter::MoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result)
+{
 }
