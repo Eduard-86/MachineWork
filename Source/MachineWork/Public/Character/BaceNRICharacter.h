@@ -5,22 +5,26 @@
 #include "CoreMinimal.h"
 #include "GameFramework/Character.h"
 #include "Runtime/AIModule/Classes/AIController.h"
+#include "NRI/BattleMap/BaseCombatGrid.h"
 
 #include "BaceNRICharacter.generated.h"
 
-struct FCombatGridCell;
+//struct FCombatGridCell;
 
 /// <summary>
 /// Запихни премещение с оповещениями в отдельный компонент
 /// </summary>
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FNRICharMovePathStarted, ABaceNRICharacter, NRIChar, 
-	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint, FCombatGridCell, NextPoint)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePointStarted, ABaceNRICharacter, NRIChar, 
-	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePointComplite, ABaceNRICharacter, NRIChar, 
-	EPathFollowingResult::Type, Result)
-DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePathSComlited, ABaceNRICharacter, NRIChar, 
-	EPathFollowingResult::Type, Result)
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_FourParams(FNRICharMovePathStarted, ABaceNRICharacter*, NRIChar,
+	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint, FCombatGridCell, NextPoint);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePointStarted, ABaceNRICharacter*, NRIChar,
+	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePointComplite, ABaceNRICharacter*, NRIChar,
+	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint);
+
+DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePathSComlited, ABaceNRICharacter*, NRIChar,
+	FCombatGridCell, StartPoint, FCombatGridCell, FinishPoint);
 
 UCLASS(config=Game)
 class ABaceNRICharacter : public ACharacter
