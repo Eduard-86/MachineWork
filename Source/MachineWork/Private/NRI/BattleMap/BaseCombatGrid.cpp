@@ -111,6 +111,16 @@ FVector ABaseCombatGrid::GetCellLocation(FCellIndex CellIndex)
 	return CellsMap.Find(CellIndex)->location;
 }
 
+FCombatGridCell ABaseCombatGrid::GetCell(FCellIndex CellIndex)
+{
+	FCombatGridCell* FindElement = CellsMap.Find(CellIndex);
+
+	if (FindElement != nullptr)
+		return FCombatGridCell(*FindElement);
+	else
+		return FCombatGridCell();
+}
+
 FCellIndex ABaseCombatGrid::GetGridSize() 
 {
 	return FCellIndex(GridRow, GridColumn);

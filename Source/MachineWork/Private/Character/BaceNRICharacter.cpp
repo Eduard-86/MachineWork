@@ -41,22 +41,9 @@ ABaceNRICharacter::ABaceNRICharacter()
 //////////////////////////////////////////////////////////////////////////
 // Input
 
-void ABaceNRICharacter::StartMoveToPoints(TArray<FCombatGridCell> PointsArray)
-{
-	AAIController* AICont = Cast<AAIController>(GetController());
-
-	AICont->ReceiveMoveCompleted.AddDynamic(this, &ABaceNRICharacter::MoveCompleted);
-
-	AICont->MoveToLocation(FVector::Zero());
-
-}
-
 void ABaceNRICharacter::SetupPlayerInputComponent(class UInputComponent* PlayerInputComponent)
 {
 	// Set up gameplay key bindings
 	check(PlayerInputComponent);
 }
 
-void ABaceNRICharacter::MoveCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result)
-{
-}

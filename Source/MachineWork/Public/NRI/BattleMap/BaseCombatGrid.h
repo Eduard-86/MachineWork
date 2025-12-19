@@ -149,6 +149,9 @@ public:
 	FVector GetCellLocation(FCellIndex CellIndex);
 
 	UFUNCTION(BlueprintCallable)
+	FCombatGridCell GetCell(FCellIndex CellIndex);
+
+	UFUNCTION(BlueprintCallable)
 	FCellIndex GetGridSize();
 
 
