@@ -6,6 +6,7 @@
 #include "AIController.h"
 #include "Engine/WorldComposition.h"
 #include "GameFramework/Character.h"
+#include "GameFramework/CharacterMovementComponent.h"
 
 // Sets default values for this component's properties
 UGridMovementComponent::UGridMovementComponent()
@@ -70,8 +71,14 @@ bool UGridMovementComponent::StartMoveToGrid(TArray<FCellIndex> IndexPathArray)
 	{
 		OwnAICont = Cast<AAIController>(OwnChar->GetController());
 
-		OwnAICont->ReceiveMoveCompleted.AddDynamic(this, 
-			&UGridMovementComponent::MoveToPointCompleted);
+		//OwnAICont->ReceiveMoveCompleted.AddDynamic(this, &UGridMovementComponent::MoveToPointCompleted);
+
+		FScriptDelegate Delegate;
+		Delegate.BindUFunction(this, TEXT("MoveToPointCompleted"));
+
+		OwnAICont->ReceiveMoveCompleted.AddUnique(Delegate);
+
+		EMovePlayType = MovePlayType::Play;
 
 		PathCounter = 0;
 		//GridPath = PointsArray;
@@ -84,7 +91,7 @@ bool UGridMovementComponent::StartMoveToGrid(TArray<FCellIndex> IndexPathArray)
 		StartMoveToPoint.Broadcast(OwnChar, MyGridPointIndex,
 			GridPathIndex[0]);
 
-		OwnAICont->MoveToLocation(OwnerGrid->GetCell(GridPathIndex[0]).location, -1,
+		OwnAICont->MoveToLocation(OwnerGrid->GetCell(GridPathIndex[PathCounter]).location, -1,
 			false, false);
 
 		return true;
@@ -99,30 +106,93 @@ bool UGridMovementComponent::StartMoveToGrid(TArray<FCellIndex> IndexPathArray)
 
 void UGridMovementComponent::MoveToPointCompleted(FAIRequestID RequestID, EPathFollowingResult::Type Result)
 {
-	MyGridPointIndex = GridPathIndex[PathCounter];
+	//MyGridPointIndex = GridPathIndex[PathCounter];
 
-	PathCounter++;
+	//PathCounter++;
 
-	CompleteMoveToPoint.Broadcast(OwnChar, GridPathIndex[PathCounter - 1],
-		MyGridPointIndex);
+	CompleteMoveToPoint.Broadcast(OwnChar, MyGridPointIndex,
+		GridPathIndex[PathCounter]);
 
-	if(PathCounter < GridPathIndex.Num())
+	if (PathCounter+1 >= GridPathIndex.Num() || EMovePlayType == MovePlayType::Stop)
 	{
+		CompleteMoveToPath.Broadcast(OwnChar, MyGridPointIndex,
+			GridPathIndex[PathCounter]);
+
+		MyGridPointIndex = GridPathIndex[PathCounter];
+
+		PathCounter = 0;
+
+		GridPathIndex.Empty();
+
+		OwnAICont->ReceiveMoveCompleted.RemoveDynamic(this,
+			&UGridMovementComponent::MoveToPointCompleted);
+	}
+	else
+	{
+		switch (EMovePlayType)
+		{
+			case MovePlayType::Play:
+			{
+				MyGridPointIndex = GridPathIndex[PathCounter];
+
+				PathCounter++;
+
+				StartMoveToPoint.Broadcast(OwnChar, MyGridPointIndex,
+					GridPathIndex[PathCounter]);
+
+				OwnAICont->MoveToLocation(OwnerGrid->GetCell(GridPathIndex[PathCounter]).location, 
+					-1, false, false);
+
+				break;
+			}
+			case MovePlayType::Pause:
+			{
+				OwnAICont->ReceiveMoveCompleted.RemoveDynamic(this,
+					&UGridMovementComponent::MoveToPointCompleted);
+
+				break;
+			}
+			///case MovePlayType::Stop:
+			//{
+			//	OwnAICont->ReceiveMoveCompleted.RemoveDynamic(this,
+			//		&UGridMovementComponent::MoveToPointCompleted);
+			//
+			//	break;
+			//}
+		}
+	}
+}
+
+void UGridMovementComponent::PauseGridMove()
+{
+	EMovePlayType = MovePlayType::Pause;
+}
+
+void UGridMovementComponent::PlayGridMove()
+{
+	EMovePlayType = MovePlayType::Play;
+
+	if(Cast<UCharacterMovementComponent>(
+		OwnChar->GetMovementComponent())->Velocity.IsNearlyZero() && PathCounter < GridPathIndex.Num())
+	{
+		FScriptDelegate Delegate;
+		Delegate.BindUFunction(this, TEXT("MoveToPointCompleted"));
+
+		OwnAICont->ReceiveMoveCompleted.AddUnique(Delegate);
+
 		StartMoveToPoint.Broadcast(OwnChar, MyGridPointIndex,
 			GridPathIndex[0]);
 
 		OwnAICont->MoveToLocation(OwnerGrid->GetCell(GridPathIndex[PathCounter]).location, -1,
 			false, false);
 	}
-	else
-	{
-		CompleteMoveToPath.Broadcast(OwnChar, GridPathIndex[0],
-			MyGridPointIndex);
 
-		GridPathIndex.Empty();
+	//OwnAICont->ReceiveMoveCompleted.AddDynamic(this,&UGridMovementComponent::MoveToPointCompleted);
 
-		OwnAICont->ReceiveMoveCompleted.RemoveDynamic(this,
-			&UGridMovementComponent::MoveToPointCompleted);
+	//Delegate.BindUFunction(this, GET_FUNCTION_NAME_CHECKED(UGridMovementComponent, MoveToPointCompleted));
+}
 
-	}
+void UGridMovementComponent::CancelGridMove()
+{
+	EMovePlayType = MovePlayType::Stop;
 }

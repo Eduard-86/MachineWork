@@ -31,7 +31,13 @@ DECLARE_DYNAMIC_MULTICAST_DELEGATE_ThreeParams(FNRICharMovePathSComlited, AChara
 /*
 	Перемещаемся
 */
-
+UENUM(BlueprintType)
+enum class MovePlayType : uint8
+{
+	Play,
+	Pause,
+	Stop
+};
 
 UCLASS(config = Game, ClassGroup=(Custom), meta=(BlueprintSpawnableComponent) )
 class MACHINEWORK_API UGridMovementComponent : public UActorComponent
@@ -42,6 +48,9 @@ class MACHINEWORK_API UGridMovementComponent : public UActorComponent
 public:	
 	// Sets default values for this component's properties
 	UGridMovementComponent();
+
+	UPROPERTY(BlueprintReadOnly)
+	MovePlayType EMovePlayType = MovePlayType::Play;
 
 protected:
 	// Called when the game starts
@@ -67,6 +76,7 @@ protected:
 	UPROPERTY(BlueprintReadOnly, EditInstanceOnly, Category = "Grid")
 	TObjectPtr<ABaseCombatGrid> OwnerGrid;
 
+
 public:	
 	// Called every frame
 	virtual void TickComponent(float DeltaTime, ELevelTick TickType, FActorComponentTickFunction* ThisTickFunction) override;
@@ -86,12 +96,32 @@ protected:
 
 	TArray<FCellIndex> GridPathIndex;
 
-	uint8 PathCounter = 0;
+	uint16 PathCounter = 0;
 
 
 	TObjectPtr<AAIController> OwnAICont;
 
 	TObjectPtr<ACharacter> OwnChar;
+
+protected:
+
+	bool IsPause = false;
+
+	bool IsCancel = false;
+
+public:
+
+	UFUNCTION(BlueprintCallable, Category = "API GridMove", 
+		meta = (DisplayName = "PauseGridMove"))
+	void PauseGridMove();
+
+	UFUNCTION(BlueprintCallable, Category = "API GridMove",
+		meta = (DisplayName = "ContinueGridMove"))
+	void PlayGridMove();
+
+	UFUNCTION(BlueprintCallable, Category = "API GridMove",
+		meta = (DisplayName = "CancelGridMove"))
+	void CancelGridMove();
 
 public:
 
@@ -106,7 +136,7 @@ public:
 
 public:
 
-	UFUNCTION(BlueprintCallable)
+	UFUNCTION(BlueprintCallable, Category = "API GridMove")
 	bool StartMoveToGrid(TArray<FCellIndex> IndexPathArray);
 
 };
